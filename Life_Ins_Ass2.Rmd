@@ -1,0 +1,160 @@
+---
+title: "Assignment 2"
+subtitle: 'Life Insurance Mathematics'
+author: "Asparuh Rangelov (13576534), Denis Kolarik (14047063)"
+date: "2023-09-15"
+output: pdf_document
+---
+```{r}
+library(RColorBrewer)
+cols = brewer.pal(9,"Set1")
+col<-cols[1:30]
+```
+
+We import mortality data for Germany:
+
+```{r}
+Data = read.table('/Users/asparuhrangelov/Downloads/Germany_A2.txt', header = TRUE)
+
+```
+Q2 A
+
+With the code below we plot the force of mortality for an (x) years olds, in relation between time and age, for different time periods:
+
+```{r}
+for (i in 1:9){
+  Data[,i] = as.numeric(Data[,i])
+}
+Data$mux = -1*log(1-Data$qx)
+```
+Above, we created a new variable 'mux', that approximates the force of mortality. We used the approximation
+
+$$
+\mu_x \approx -\ln(1-d_x)
+$$
+
+```{r}
+
+with(subset(Data, Year == 1990),
+     plot(Age, log(mux),type = "l", ylim = c(-10,0), main = "Force of mortality for Germay: 1990-2020",
+          xlab = "Age x", ylab = expression(paste("ln(Force of mortality)")),col=col[1], lwd = 2))
+with(subset(Data, Year == 1990 + 10),
+     lines(Age, log(mux) ,col=col[2], lwd = 2))
+with(subset(Data, Year == 1990 + 20),
+     lines(Age, log(mux) ,col=col[3], lwd = 2))
+with(subset(Data, Year == 1990 + 30),
+     lines(Age, log(mux) ,col=col[4], lwd = 2))
+legend(3,0,legend=c("t=1990","t=2000","t=2010",'t=2020'),
+       col=col[1:4], lty=1,cex=0.9, lwd = 1.5)
+```
+
+Question 2 B
+
+For this subquestion, we plot the logarithm of the force of mortality, as previously calculated, for different years. We vary this across ages.
+```{r}
+with(subset(Data, Age == 10),
+     plot(Year, log(mux) ,type = "l", ylim = c(-10,0.5), main = 
+            "Force of mortality versus year, for different ages",
+          xlab = "Year", ylab = expression(paste("ln(Force of mortality)")),col=col[1], lwd = 2))
+with(subset(Data, Age == 20),
+     lines(Year, log(mux) ,col=col[2], lwd = 2))
+with(subset(Data, Age == 30),
+     lines(Year, log(mux) ,col=col[3], lwd = 2))
+with(subset(Data, Age == 40),
+     lines(Year, log(mux) ,col=col[4], lwd = 2))
+with(subset(Data, Age == 50),
+     lines(Year, log(mux) ,col=col[5], lwd = 2))
+with(subset(Data, Age == 60),
+     lines(Year, log(mux) ,col=col[6], lwd = 2))
+with(subset(Data, Age == 70),
+     lines(Year, log(mux) ,col=col[7], lwd = 2))
+with(subset(Data, Age == 80),
+     lines(Year, log(mux) ,col=col[8], lwd = 2))
+legend(1989.14,0,legend=c("Age = 10","Age = 20","Age = 30",'Age = 40', 'Age = 50',
+                    'Age = 60', 'Age = 70', 'Age = 80'), horiz = TRUE,
+         col=col[1:8], lty=1,cex=0.58, lwd = 1.5)
+
+
+```
+
+For the specified period (1990-2020), there seems to be not big variation for the force of mortality across all ages. Nonetheless, there is a general trend for the force of mortality to decrease with time.
+
+Question 2 C
+
+For this question, we define the cummulative distribution of lx by using the 'cumprod' command. Furthermore, we condition on the years 1990-2020 (increasing by a factor of 5):
+
+```{r}
+Data_1990<-subset(Data,Year==1990)
+qx_1990<-as.numeric(Data_1990$qx)
+px_1990<-1-qx_1990
+
+p0_1990<- cumprod(px_1990[1:length(px_1990)])
+Age_1990<-Data_1990$Age
+plot(Age_1990,p0_1990,type = "l",main = expression(paste("Survival Function\ ","S" [0],","[t],"(x)")) ,
+     ylim = c(0,1),xlab = "Age x",ylab = 'Survival Probability of a newborn' ,col = col[1], lwd = 1.5)
+
+
+years<-seq(1995,2020, by = 5)
+
+for (i in 1:length(years)) {
+  Data_i<-subset(Data,Year==years[i])
+  qx_i<-as.numeric(Data_i$qx)
+  px_i<-1-qx_i
+  p0_i<- cumprod(px_i[1:length(px_i)])
+  Age_i<-Data_i$Age
+  lines(Age_i,p0_i,col = col[i+1], lwd = 1.5)
+  }
+
+legend(10,0.8,legend=c("t=1990","t=1995","t=2000","t=2005","t=2010", 't=2015', 't=2020'),
+       col=col[1:7], lty=1,cex=1, lwd = 1.5)
+
+```
+
+The trend is clear: survival probabilities tend to improve with time, with the most recent survival function being on the left.
+
+Question 2 D
+
+For this question, we plot the number of people, out of 100,000, that die immediately after surviving to age x. 
+
+For this, we use the product (lx * muX), which is the probability that someone survives x years and dies immediately after that.
+
+For muX we use the approximation mx $\approx -1\cdot \ln(1-d_{x})$.
+
+```{r}
+
+Data_1990<-subset(Data,Year==1990)
+qx_1990 = as.numeric(Data_1990$qx)
+mx_1990 = as.numeric(Data_1990$mx)
+lx_1990 = as.numeric(Data_1990$lx)
+
+y = lx_1990 * -1*log(1-qx_1990)
+
+Age_1990<-Data_1990$Age
+plot(Age_1990,y,type = "l", main = "Number of people (of 100K) that die after reaching an age x", 
+     ylim = c(0,5000),xlab = "Age x",ylab = 'lx * muX' ,col = col[1], lwd = 1.5)
+
+years = seq(1995,2020,by = 5)
+
+for (i in 1:length(years)) {
+  Age_i<-Data_i$Age
+  Data_i<-subset(Data,Year==years[i])
+  qx_i = as.numeric(Data_i$qx)
+  mx_i = as.numeric(Data_i$mx)
+  lx_i = as.numeric(Data_i$lx)
+  
+  y_i = lx_i * -1*log(1-qx_i)
+  
+  lines(Age_i, y_i, col = col[i+1], lwd = 1.5)
+  }
+
+legend(10,4500,legend=c("t=1990","t=1995","t=2000","t=2005","t=2010", 't=2015', 't=2020'),
+       col=col[1:7], lty=1,cex=1, lwd = 1.5)
+
+```
+
+The graph confirms our intuition, namely that most people arrive only after reaching 60, with the peak being around 80.
+
+The same trend for improvement in life expectancy we mentioned previously is also visible here: the more recent probabilities of surviving are pointwise better than the older ones.
+
+
+
